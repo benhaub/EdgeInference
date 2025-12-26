@@ -1,0 +1,11 @@
+{
+    "projectName": "edgeInference",
+    "files.associations": {
+        "string_view": "cpp",
+        "deque": "cpp",
+        "string": "cpp",
+        "vector": "cpp",
+        "freertosconfig.h": "c",
+        "utility": "cpp"
+    }
+}

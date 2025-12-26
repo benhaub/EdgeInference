@@ -1,0 +1,274 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    // https://code.visualstudio.com/docs/editor/variables-reference
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": ["arg1", "arg2"]
+        },
+        {
+            "type": "cppdbg",
+            "request": "launch",
+            "name": "MacOs Debug",
+            "program": "${workspaceFolder}\\Darwin_build\\${config:projectName}.Mach-O",
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": true,
+            "MIMode": "lldb"
+        },
+        {
+            "type": "cppdbg",
+            "request": "launch",
+            "name": "Linux Debug",
+            "program": "${workspaceFolder}\\Linux_build\\${config:projectName}.elf",
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": true,
+            "MIMode": "gdb",
+            "miDebuggerPath": "${workspaceFolder}/.vscode/priveledgedGdb.bash",
+            "externalConsole": false
+        },
+        {
+            //- In order for this to work you will have to start VS code from a shell that has sourced export.sh from esp-idf.
+            //This is not the same thing as sourcing it from the integrated terminal and then trying to debug.
+            //- I have also had cases where the debugger seems to hop back ad forth between cpu1 and cpu2. Hit the breakpoint on main
+            //but keeps going. In order to successfully break you may have to insert a break point later in the application.
+            //- If you're getting the error from the debugger that `stepping doesn't seem to advance the PC` then try running
+            // idf.py build flash and try debugging again.
+            "type": "cppdbg",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "name": "ESP Debug",
+            "program": "${workspaceFolder}\\build\\${config:projectName}.elf",
+            "targetArchitecture": "arm",
+            "MIMode": "gdb",
+            "miDebuggerPath": "xtensa-esp32s3-elf-gdb",
+            "setupCommands": [
+                {
+                    "text": "-environment-cd ${workspaceFolder}/build",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "-file-exec-and-symbols ${config:projectName}.elf",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "set remotetimeout 20",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "-break-insert app_main",
+                    "ignoreFailures": false
+                }
+            ],
+            "customLaunchSetupCommands": [
+                {
+                    "text": "target extended-remote localhost:3333",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "set remote hardware-watchpoint-limit 2"
+                },
+                {
+                    "text": "monitor reset",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "monitor halt",
+                    "ignoreFailure": false
+                },
+                {
+                    "text": "break app_main",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "flushregs",
+                    "ignoreFailures": false
+                }
+            ],
+            "showDisplayString": false,
+            "miDebuggerServerAddress": "localhost:3333",
+            "launchCompleteCommand": "None",
+            "debugServerPath": "openocd",
+            "debugServerArgs": "-f board/esp32s3-builtin.cfg",
+            "filterStderr": true,
+            "filterStdout": true
+        },
+        {
+            "type": "cppdbg",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "name": "CC3220SF Launchpad Debug",
+            "program": "${workspaceFolder}\\Cc32xx_build/${config:projectName}.elf",
+            "targetArchitecture": "arm",
+            "MIMode": "gdb",
+            "miDebuggerPath": "${userHome}/ti/ccs1281/ccs/tools/compiler/gcc-arm-none-eabi-9-2019-q4-major/bin/arm-none-eabi-gdb",
+            "setupCommands": [
+                {
+                    "text": "-environment-cd ${workspaceFolder}/Cc32xx_build",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "-file-exec-and-symbols ${config:projectName}.elf",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "set remotetimeout 20",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "-break-insert main",
+                    "ignoreFailures": false
+                }
+            ],
+            "customLaunchSetupCommands": [
+                {
+                    "text": "target extended-remote localhost:3333",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "monitor reset",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "monitor halt",
+                    "ignoreFailure": false
+                },
+                {
+                    "text": "break main",
+                    "ignoreFailures": false
+                }
+            ],
+            "showDisplayString": false,
+            "miDebuggerServerAddress": "localhost:3333",
+            "launchCompleteCommand": "None",
+            "debugServerPath": "openocd",
+            //IMPORTANT: You will need to have the jumper on J13 placed in the 001 position (functional mode and 2-wire JTAG)
+            //MORE IMPORTANT: If you're running <= 0.12.0 openocd then you will need to edit the cfg script in
+            ///usr/share/openocd/scripts/target/ti_cc3220sf.cfg according to the post here:
+            //https://sourceforge.net/p/openocd/tickets/360/
+            "debugServerArgs": "-f board/ti_cc3220sf_launchpad.cfg",
+            "filterStderr": true,
+            "filterStdout": true
+        },
+        {
+            "type": "cppdbg",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "name": "Tm4c123 Launchpad Debug",
+            "program": "${workspaceFolder}\\Tm4c123_build/${config:projectName}.elf",
+            "targetArchitecture": "arm",
+            "MIMode": "gdb",
+            "miDebuggerPath": "${userHome}/ti/ccs1281/ccs/tools/compiler/gcc-arm-none-eabi-9-2019-q4-major/bin/arm-none-eabi-gdb",
+            "setupCommands": [
+                {
+                    "text": "-environment-cd ${workspaceFolder}/Tm4c123_build",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "-file-exec-and-symbols ${config:projectName}.elf",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "set remotetimeout 20",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "-break-insert main",
+                    "ignoreFailures": false
+                }
+            ],
+            "customLaunchSetupCommands": [
+                {
+                    "text": "target extended-remote localhost:3333",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "monitor reset",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "monitor halt",
+                    "ignoreFailure": false
+                },
+                {
+                    "text": "break main",
+                    "ignoreFailures": false
+                }
+            ],
+            "showDisplayString": false,
+            "miDebuggerServerAddress": "localhost:3333",
+            "launchCompleteCommand": "None",
+            "debugServerPath": "openocd",
+            "debugServerArgs": "-f board/ti_ek-tm4c123gxl.cfg",
+            "filterStderr": true,
+            "filterStdout": true
+        },
+        {
+            "type": "cppdbg",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "name": "Tm4c129 Launchpad Debug",
+            "program": "${workspaceFolder}\\Tm4c129_build/${config:projectName}.elf",
+            "targetArchitecture": "arm",
+            "MIMode": "gdb",
+            "miDebuggerPath": "${userHome}/ti/gcc-arm-none-eabi_9_3_1/bin/arm-none-eabi-gdb",
+            "setupCommands": [
+                {
+                    "text": "-environment-cd ${workspaceFolder}/Tm4c129_build",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "-file-exec-and-symbols ${config:projectName}.elf",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "-break-insert main",
+                    "ignoreFailures": false
+                }
+            ],
+            "customLaunchSetupCommands": [
+                {
+                    "text": "target extended-remote localhost:3333",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "monitor reset",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "monitor halt",
+                    "ignoreFailure": false
+                }
+            ],
+            "showDisplayString": false,
+            "miDebuggerServerAddress": "localhost:3333",
+            "launchCompleteCommand": "None",
+            "debugServerPath": "openocd",
+            "debugServerArgs": "-f board/ti_ek-tm4c1294xl.cfg",
+            "filterStderr": true,
+            "filterStdout": true
+        }
+    ]
+}

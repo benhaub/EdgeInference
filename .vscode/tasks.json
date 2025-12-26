@@ -1,0 +1,62 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+      {
+        //Documentation for this tool is in the SDK.
+        //ti/simplelink_cc32xx_sdk_7_10_00_13/tools/cc32xx_tools/uniflash-project-generator/README.html
+        //NOTE: This has failed permanently before because I had a 0 byte favicon.ico file that this program
+        //did not like and was not very helpful with the error message.
+        "label": "CC3220SF flash",
+        "type": "shell",
+        "command": "./uniflash_project_generator",
+        "args": [
+            "--name",
+            "appName",
+            "--device",
+            "CC3220SF",
+            "--mcu_bin",
+            "${workspaceFolder}/Cc32xx_build/${config:projectName}.bin",
+            "--flash",
+            "--use_from_uniflash",
+            "--debug"
+        ],
+        "options": {
+            //Must be ran from the same directory as the program because it's hardcoded to find the service pack and won't run even with --no_sp
+            //Make sure the jumper on J13 is set to 010.
+            //https://www.ti.com/lit/ug/swru463b/swru463b.pdf
+            "cwd":"${workspaceFolder}/ccsToCMake/Cc32xx/simplelink_cc32xx_sdk_7_10_00_13/tools/cc32xx_tools/uniflash-project-generator/"
+        }
+      },
+      {
+        //You can try to use the sflash tool that comes with the SDK but it might have to be built first. The premade binaries are for windows.
+        //There is a bug in the toolsdefs file that prevents the makefile from detecting a non-windows system, you will have to make the following
+        //change on line 45:
+        //-ifeq (${TOOLS_PREFIX}, )
+        //+ifeq (${TOOLS_PREFIX},"")
+        //Even after running I was getting errors that it was unable to configure Host UART. lm4flash seems to work flawlessly. The only downside is
+        //that it doesn't come with the SDK.
+        "label": "Tm4c123 flash",
+        "type": "shell",
+        "command": "lm4flash",
+        "args": [
+          "-E",
+          "-S",
+          "0x00000000",
+          "${workspaceFolder}/Tm4c123_build/${config:projectName}.bin"
+        ]
+      },
+      {
+        "label": "Tm4c129 flash",
+        "type": "shell",
+        "command": "lm4flash",
+        "args": [
+          "-E",
+          "-S",
+          "0x00000000",
+          "${workspaceFolder}/Tm4c129_build/${config:projectName}.bin"
+        ]
+      }
+    ]
+  }
