@@ -22,6 +22,7 @@ import tensorflow as tf
 import numpy as np
 from matplotlib import pyplot as plt
 from fileToArrayOfBytes import fileToArrayOfBytes
+from PIL import Image
 
 #Function to display sample images from the set of images and labels given
 #Can take variable number of image indeces
@@ -74,22 +75,33 @@ def plotTrainingHistory(modelFittingHistory):
     plt.tight_layout()
     plt.show()
 
+#Makes the MNIST images look more like the images pulled from the LCD.
+def applyLcdDomainAdaptation(images, pixel_size=14):
+    processed = []
+    for img_array in images:
+        # 1. Force to 2D uint8
+        img = Image.fromarray(img_array.astype(np.uint8))
+
+        # 2. Hard Threshold: Force every pixel to either 0 or 255
+        # This eliminates the "fuzz" immediately.
+        img = img.point(lambda p: 255 if p > 127 else 0, mode='1') # mode='1' is bilevel
+
+        # 3. Downsample AND Upsample using NEAREST
+        # Do NOT use Bilinear/Bicubic, as they re-introduce blur.
+        img_small = img.resize((pixel_size, pixel_size), resample=Image.NEAREST)
+        img_blocky = img_small.resize((28, 28), resample=Image.NEAREST)
+
+        # 4. Convert back to 'L' (Grayscale) uint8 for the NN
+        processed.append(np.array(img_blocky.convert('L'), dtype=np.uint8))
+
+    return np.array(processed)
+
 #https://ai.google.dev/edge/litert/conversion/tensorflow/quantization/model_optimization?_gl=1*rllyhg*_up*MQ..*_ga*MzA5MTY5ODk1LjE3NjU1Nzk2Mjk.*_ga_P1DBVKWT6V*czE3NjU1Nzk2MjkkbzEkZzAkdDE3NjU1Nzk2MjkkajYwJGwwJGgxNjExNjE4NTE.
 def saveQuantizedTfLiteModel(model, xTrainingSetValues, path):
     def representativeDataSet():
-            # 1. Create dataset and add the channel dimension (28, 28) -> (28, 28, 1)
-            ds = tf.data.Dataset.from_tensor_slices(
-                tf.expand_dims(xTrainingSetValues, axis=-1)
-            )
-            
-            # 2. Resize to match model input and batch by 1 to get the 4th dimension
-            # Resulting shape per 'data' will be (1, 120, 160, 1)
-            ds = ds.map(lambda x: tf.image.resize(x, (120, 160)))
-            ds = ds.batch(1).take(100)
-
-            for data in ds:
-                # data is already (1, 120, 160, 1) and float32 from resize
-                yield [data]
+        for data in tf.data.Dataset.from_tensor_slices(xTrainingSetValues).batch(1).take(100):
+            dataWithChannel = tf.expand_dims(data, axis=-1)
+            yield [tf.dtypes.cast(dataWithChannel, tf.float32)]
 
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
@@ -109,27 +121,30 @@ if __name__ == '__main__':
     yTrainingLabelSet = 'DataSetZeroToNine/train_labels.npy'
     xTestingImageSet  = 'DataSetZeroToNine/test_images.npy'
     yTestingLabelSet  = 'DataSetZeroToNine/test_labels.npy'
-    xTrainingImages = np.load(xTrainingImageSet)
+    xTrainingImages = applyLcdDomainAdaptation(np.load(xTrainingImageSet))
     yTrainingLabels = np.load(yTrainingLabelSet)
-    xTestingImages = np.load(xTestingImageSet)
-    yTestingLabels = np.load(yTestingLabelSet)
+    xTestingImages  = applyLcdDomainAdaptation(np.load(xTestingImageSet))
+    yTestingLabels  = np.load(yTestingLabelSet)
+
+    #display labels 0 though 9
+    #displayImages(xTrainingImages, yTrainingLabels, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
 
     #Define the training model. Use a basic sequential model where the input is fed forward through each layer of the NN
-    #and has one output at the end.
-    lcdScreenSize = (120, 160, 1)
+    #and has one output for each number 0 through 9.
+    #TODO: Use sparse? https://www.tensorflow.org/guide/sparse_tensor
     model = tf.keras.models.Sequential([
         #Input layer
-        tf.keras.layers.Resizing(28,28, input_shape=lcdScreenSize),
-        #Put rescaling in the model so that we don't have to normalize the data before giving it to the model on the device.
+        tf.keras.layers.Input(shape=(28,28, 1)),
         tf.keras.layers.Rescaling(1./255),
-        tf.keras.layers.Conv2D(16, (3, 3) , activation='relu'),
-        tf.keras.layers.MaxPooling2D((2, 2)),
-        tf.keras.layers.Conv2D(32, (3, 3) , activation='relu'),
-        #The input shape must be flattened for the hidden layers inside the neural network to process. The input is a 28x28,
-        #but the dense layers need a 1D vector.
-        tf.keras.layers.GlobalAveragePooling2D(),
+        tf.keras.layers.Conv2D(32, (3,3), activation='relu'),
+        tf.keras.layers.MaxPooling2D(2, 2),
+        tf.keras.layers.Conv2D(32, (3,3), activation='relu'),
+        tf.keras.layers.MaxPooling2D(2, 2),
+        tf.keras.layers.Flatten(),
         #4 Hidden layers
+        tf.keras.layers.Dense(64, activation='relu'),
         tf.keras.layers.Dense(32, activation='relu'),
+        tf.keras.layers.Dense(16, activation='relu'),
         #Output layer. Softmax takes in an input vector of the outputs of the neural network and produces a probability that
         #the output belongs to one of the labels in the data set. It's commonly used as the output of a network and is good
         #for multiple classification problems (more than 2 labels)
@@ -144,27 +159,10 @@ if __name__ == '__main__':
     model.compile(loss = "sparse_categorical_crossentropy",
               optimizer=tf.keras.optimizers.Adam(1e-3),
               metrics=["accuracy"])
-    
-    def resizeMnistToLcd(image, label):
-        image = tf.expand_dims(image, axis=-1)
-        image = tf.image.resize(image, (120, 160))
-        return image, label
 
-    trainImagesToLcdSize = tf.data.Dataset.from_tensor_slices(
-        (xTrainingImages, yTrainingLabels)
-    ).map(resizeMnistToLcd, num_parallel_calls=tf.data.AUTOTUNE)\
-    .batch(16)\
-    .prefetch(tf.data.AUTOTUNE)
-
-    testImagesToLcdSize = tf.data.Dataset.from_tensor_slices(
-        (xTestingImages, yTestingLabels)
-    ).map(resizeMnistToLcd, num_parallel_calls=tf.data.AUTOTUNE)\
-    .batch(16)\
-    .prefetch(tf.data.AUTOTUNE)
-    
-    history = model.fit(trainImagesToLcdSize,
-                        epochs=10,
-                        validation_data = testImagesToLcdSize)
+    history = model.fit(xTrainingImages, yTrainingLabels,
+                        epochs=5,
+                        validation_data = (xTestingImages, yTestingLabels), batch_size=128)
 
     plotTrainingHistory(history)
 

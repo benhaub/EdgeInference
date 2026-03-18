@@ -16,14 +16,13 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_BUILD_PARALLEL_LEVEL 8)
 
 set(MODEL_FEATURES "InferenceAbstractionTypes::ModelFeatures::QuanitizationConversion,
-                    InferenceAbstractionTypes::ModelFeatures::BilinearResizeManipulation,
                     InferenceAbstractionTypes::ModelFeatures::Convolutional2dLayers,
                     InferenceAbstractionTypes::ModelFeatures::MaxPooling2dSpatialDimension,
-                    InferenceAbstractionTypes::ModelFeatures::MeanManipulation,
+                    InferenceAbstractionTypes::ModelFeatures::ReshapeManipulation,
                     InferenceAbstractionTypes::ModelFeatures::DenseLayers,
                     InferenceAbstractionTypes::ModelFeatures::SoftMaxActivation")
 
-set(ARENA_SIZE_BYTES 45*1024)
+set(ARENA_SIZE_BYTES 35*1024)
 
 #python3 apf.py build --toolchain ccsToCMake/toolchain.cmake --target CC32xx
 if (Cc32xx)
@@ -58,6 +57,8 @@ if (Cc32xx)
     APP_DEFAULT_STACK_SIZE=12*1024
     #Sysconfig automatically sets pins, so these will be ignored by the driver.
     #However, if using an application which is platform agnostic, -1 pins will be rejected as invalid.
+    APP_MAX_QUEUEABLE_EVENTS=10
+    APP_MAX_QUEUEABLE_COMMANDS=10
   )
 
 #python3 apf.py build --toolchain ccsToCMake/toolchain.cmake --target Tm4c123
@@ -91,6 +92,8 @@ elseif (Tm4c123)
     APP_EXTERNAL_CRYSTAL_FREQUENCY=16E6
     APP_DEFAULT_STACK_SIZE=12*1024
     APP_HEAP_SIZE=12*1024
+    APP_MAX_QUEUEABLE_EVENTS=10
+    APP_MAX_QUEUEABLE_COMMANDS=10
   )
 
 #python3 apf.py build --toolchain ccsToCMake/toolchain.cmake --target Tm4c129
@@ -122,20 +125,23 @@ elseif (Tm4c129)
     MAIN_PARTITION_TYPE=FileSystemTypes::Implementation::Unknown
     APP_EXTERNAL_CRYSTAL_FREQUENCY=25E6
     APP_DEFAULT_STACK_SIZE=8*1024
-    APP_HEAP_SIZE=100*1024
+    APP_HEAP_SIZE=32*1024
     APP_MAX_NUMBER_OF_THREADS=1
     APP_TFLITE_MODEL_FEATURES=${MODEL_FEATURES}
     APP_TFLITE_ALLOCATED_MEMORY_SIZE_BYTES=${ARENA_SIZE_BYTES}
     #Pin Number are set using sysconfig.
-    APP_CHIP_SELECT_PIN_NUMBER=-1
-    APP_CLOCK_PIN_NUMBER=-1
-    APP_POCI_PIN_NUMBER=-1
-    APP_PICO_PIN_NUMBER=-1
-    APP_LCD_PART_NUMBER=LcdFactoryTypes::PartNumber::Rvt35AHBNWC00
-    APP_LCD_SPI_PERIPHERAL_NUMBER=PeripheralNumber::One
+    APP_RIVERDI_LCD_CHIP_SELECT_PIN_NUMBER=-1
+    APP_RIVERDI_LCD_CLOCK_PIN_NUMBER=-1
+    APP_RIVERDI_LCD_POCI_PIN_NUMBER=-1
+    APP_RIVERDI_LCD_PICO_PIN_NUMBER=-1
+    APP_RIVERDI_LCD_PART_NUMBER=LcdFactoryTypes::PartNumber::Rvt35AHBNWC00
+    APP_RIVERDI_LCD_SPI_PERIPHERAL_NUMBER=PeripheralNumber::One
     APP_PROCESSOR_CLOCK_FREQUENCY=120E6
-    APP_LCD_POWERDOWN_PERIPHERAL_NUMBER=PeripheralNumber::Three
-    APP_LCD_POWERDOWN_PIN_NUMBER=1
+    APP_MAX_QUEUEABLE_EVENTS=10
+    APP_MAX_QUEUEABLE_COMMANDS=10
+    APP_RIVERDI_LCD_POWERDOWN_PERIPHERAL_NUMBER=PeripheralNumber::Three
+    APP_RIVERDI_LCD_POWERDOWN_PIN_NUMBER=1
+    APP_RIVERDI_LCD_SPI_CLOCK_FREQUENCY=50E3
     BT81X_CHIP_SELECT_PERIPHERAL_NUMBER=PeripheralNumber::Three
     BT81X_CHIP_SELECT_PIN_NUMBER=0
   )
@@ -168,8 +174,12 @@ elseif (ESP_PLATFORM)
   PRIVATE
     MAIN_PARTITION_TYPE=FileSystemTypes::Implementation::KeyValue
     APP_PROCESSOR_CLOCK_FREQUENCY=0
+    APP_MAX_QUEUEABLE_EVENTS=10
+    APP_MAX_QUEUEABLE_COMMANDS=10
     APP_EXTERNAL_CRYSTAL_FREQUENCY=0
     APP_DEFAULT_STACK_SIZE=16*1024
+    APP_MAX_QUEUEABLE_EVENTS=10
+    APP_MAX_QUEUEABLE_COMMANDS=10
   )
   target_compile_definitions(__idf_main PRIVATE $<TARGET_PROPERTY:${PROJECT_NAME}${EXECUTABLE_SUFFIX},COMPILE_DEFINITIONS>)
 
@@ -204,7 +214,8 @@ elseif(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
     APP_PICO_PIN_NUMBER=-1
     APP_LCD_PART_NUMBER=LcdFactoryTypes::PartNumber::Rvt35AHBNWC00
     APP_LCD_SPI_PERIPHERAL_NUMBER=PeripheralNumber::One
-    APP_PROCESSOR_CLOCK_FREQUENCY=0
+    APP_MAX_QUEUEABLE_EVENTS=10
+    APP_MAX_QUEUEABLE_COMMANDS=10
     BT81X_CHIP_SELECT_PERIPHERAL_NUMBER=PeripheralNumber::Three
     BT81X_CHIP_SELECT_PIN_NUMBER=0
     APP_LCD_POWERDOWN_PERIPHERAL_NUMBER=PeripheralNumber::Three
@@ -230,6 +241,8 @@ elseif(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Darwin")
     APP_EXTERNAL_CRYSTAL_FREQUENCY=0
     APP_DEFAULT_STACK_SIZE=12*1024
     APP_HOME_DIRECTORY="$ENV{HOME}"
+    APP_MAX_QUEUEABLE_EVENTS=10
+    APP_MAX_QUEUEABLE_COMMANDS=10
   )
 
 #python3 apf.py build --toolchain ccsToCMake/toolchain.cmake --target Raspbian12Pi4ModelB
@@ -255,6 +268,8 @@ elseif(Raspbian12Pi4ModelB)
     APP_EXTERNAL_CRYSTAL_FREQUENCY=0
     APP_DEFAULT_STACK_SIZE=12*1024
     APP_HOME_DIRECTORY=$ENV{HOME}
+    APP_MAX_QUEUEABLE_EVENTS=10
+    APP_MAX_QUEUEABLE_COMMANDS=10
   )
 
 else()

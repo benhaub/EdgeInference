@@ -21,6 +21,8 @@ class EdgeInference : public Global<EdgeInference> {
     static constexpr std::array<char, OperatingSystemTypes::MaxThreadNameLength> _EdgeInferenceThreadName = {"edgeInference"};
 
     ErrorType edgeInferenceThread();
+    ErrorType inferencePreprocessing(std::string &screenBuffer, const Area &area);
+    ErrorType inferencePreprocessing(StaticString::Container &screenBuffer, const Area &area);
 
     private:
     std::optional<LcdFactoryTypes::LcdFactoryVariant> _lcd;
