@@ -9,7 +9,8 @@
 //AbstractionLayer
 #include "Global.hpp"
 #include "OperatingSystemModule.hpp"
-#include "LcdFactory.hpp"
+//EdgeInference
+#include "LcdConfiguration.hpp"
 
 class EdgeInference : public Global<EdgeInference> {
 

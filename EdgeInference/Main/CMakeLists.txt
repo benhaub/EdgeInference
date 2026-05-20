@@ -1,6 +1,7 @@
 target_sources(${PROJECT_NAME}${EXECUTABLE_SUFFIX}
 PRIVATE FILE_SET headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_LIST_DIR} FILES
   EdgeInference.hpp
+  LcdConfiguration.hpp
 )
 
 target_sources(${PROJECT_NAME}${EXECUTABLE_SUFFIX}

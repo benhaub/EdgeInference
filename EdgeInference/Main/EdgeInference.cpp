@@ -1,3 +1,4 @@
+//EdgeInference
 #include "EdgeInference.hpp"
 #include "quantizedHandwrittenZeroToNineModel.hpp"
 //AbstractionLayer
@@ -7,7 +8,7 @@
 
 ErrorType EdgeInference::edgeInferenceThread() {
     MachineLearningInference inference;
-    ErrorType error = LcdFactory::Factory<APP_LCD_PART_NUMBER>(_lcd);
+    ErrorType error = LcdFactory::Factory<LcdFactoryTypes::PartNumber::APP_LCD_PART_NUMBER>(_lcd);
 
     if (ErrorType::Success == (error = inference.init())) {
         const char *modelData = reinterpret_cast<const char *>(TfLiteModels::quantizedHandwrittenZeroToNineModel.data());
@@ -17,8 +18,8 @@ ErrorType EdgeInference::edgeInferenceThread() {
             error = std::visit([&](auto &lcd) -> ErrorType {
                 ErrorType error = ErrorType::Failure;
 
-                if (ErrorType::Success == (error = lcd.configure())) {
-                    error = lcd.init();
+                if (ErrorType::Success == error) {
+                    error = lcd.init(APP_LCD_PART_NUMBER::LcdConfiguration());
 
                     while (ErrorType::Success == error) {
                         error = lcd.startDesign();
