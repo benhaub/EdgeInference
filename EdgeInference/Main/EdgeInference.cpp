@@ -7,7 +7,7 @@
 
 ErrorType EdgeInference::edgeInferenceThread() {
     MachineLearningInference inference;
-    ErrorType error = LcdFactory::Factory<APP_RIVERDI_LCD_PART_NUMBER>(_lcd);
+    ErrorType error = LcdFactory::Factory<APP_LCD_PART_NUMBER>(_lcd);
 
     if (ErrorType::Success == (error = inference.init())) {
         const char *modelData = reinterpret_cast<const char *>(TfLiteModels::quantizedHandwrittenZeroToNineModel.data());
@@ -112,7 +112,7 @@ ErrorType EdgeInference::inferencePreprocessing(std::string &screenBuffer, const
 
     if (ErrorType::Success == error) {
         const Area islandArea = {.origin = {0,0}, .width = 3, .height = 3};
-        error = IslandFilter(screenBuffer, area, 0xFF, 0x00, islandArea);
+        error = IslandFilter(screenBuffer, area, PixelFormat::Greyscale, 0xFF, 0x00, islandArea);
 
         if (ErrorType::Success == error) {
             Area downsized = {{0,0},28,28};
