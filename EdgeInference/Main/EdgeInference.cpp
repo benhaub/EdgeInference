@@ -16,7 +16,6 @@ ErrorType EdgeInference::edgeInferenceThread() {
 
         if (ErrorType::Success == (error = inference.loadModel(std::string_view(modelData, modelSize)))) {
             error = std::visit([&](auto &lcd) -> ErrorType {
-                ErrorType error = ErrorType::Failure;
 
                 if (ErrorType::Success == error) {
                     error = lcd.init(APP_LCD_PART_NUMBER::LcdConfiguration());
